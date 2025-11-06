@@ -1,4 +1,4 @@
-# 2D Ripple Simulation
+# Ripple Simulation
 
 ## Overview
 This project simulates **wave propagation** across a 2D surface using a **heightmap-based physics model**.  
@@ -18,17 +18,8 @@ The simulation visualizes the **2D wave equation** using color mapping to show h
 ---
 
 ## How It Works
-The simulation models the surface as a **heightmap grid**, where each cell stores a height value.  
-Each frame, the height at each cell is updated using a discrete approximation of the wave equation:
-
-\[
-h_{new}(x, y) = \frac{h_{prev}(x-1, y) + h_{prev}(x+1, y) + h_{prev}(x, y-1) + h_{prev}(x, y+1)}{2} - h_{curr}(x, y)
-\]  
-\[
-h_{new}(x, y) *= damping
-\]
-
-This produces realistic ripple motion as energy spreads and fades across the grid.
+The simulation models the surface as a **heightmap grid**, where each cell stores a height value.
+*todo
 
 ---
 
@@ -49,7 +40,7 @@ This produces realistic ripple motion as energy spreads and fades across the gri
 
 ---
 
-## 👥 Team
+## Team
 - **Landrey Kiker**
 - **Kate Chavira** 
 
