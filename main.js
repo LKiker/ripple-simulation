@@ -1,23 +1,33 @@
 "use strict";
 
 // vertex shader code (vsc)
-const vsc = "attribute vec3 vpos;" +
+const vsc = "attribute vec3 vpos;" +  // position
+"attribute vec3 vcol;" +              // color
+"varying vec3 fcol;" +                // passed to fragment shader
 "void main() {" +
-"gl_Position = vec4(vpos.xy, 0.0, 1.0);" +
-"gl_PointSize = 3.0;" +
+" gl_Position = vec4(vpos.xy, 0.0, 1.0);" +
+" gl_PointSize = 4.0;" +
+" fcol = vcol;" +                     // send color to fragment shader
 "}";
 
 // fragment shader code (fsc)
 const fsc = "precision lowp float;" +
-"uniform vec4 vcolor;" +
+"varying vec3 fcol;" +                // receive color from vertex shader
 "void main() {" +
-"gl_FragColor = vcolor;" +
+" gl_FragColor = vec4(fcol, 1.0);" +
 "}";
 
-const GRID_SIZE = 200;  // 200x200 heightmap grid
-const DAMPING = 0.99;   // energy loss per frame
-let current = [];   // current wave heights
-let previous = [];  // previous wave heights
+// User control values
+let DAMPING = 0.99;   // energy loss per frame
+let C2 = 0.5;         // wave speed
+let radius = 2;     // splash radius
+let strength = 3.0; // splash strength
+
+// Grid variables
+let GRID_SIZE = 250;  // heightmap grid
+let current = [];     // current wave heights
+let previous = [];    // previous wave heights
+
 let gl, gl_prog, canvas;
 const N_DIM = 3;
 let unif_vcolor;
@@ -69,20 +79,6 @@ function init_gl() {
     let attr_vpos = gl.getAttribLocation(gl_prog, "vpos");
     gl.vertexAttribPointer(attr_vpos, N_DIM, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(attr_vpos);
-
-    unif_vcolor = gl.getUniformLocation(gl_prog, "vcolor");
-}
-
-function to_clip_coord(x, y) {
-  let clip_x =  2 * x / width  - 1;
-  let clip_y =  1 - 2 * y / height;
-  return [clip_x, clip_y, 1];
-}
-
-function draw_point(point, color=[1,1,1]) {
-  gl.uniform4f(unif_vcolor, color[0], color[1], color[2], 1.0);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(point), gl.STATIC_DRAW);
-  gl.drawArrays(gl.POINTS, 0, 1);
 }
 
 // initialize heightmap
@@ -100,24 +96,33 @@ function init_heightmap() {
 // convert grid to vertices
 function build_vertex_data() {
   const verts = [];
+  const colors = [];
   const step = 2 / GRID_SIZE; // map grid to clip space (-1..1)
+
   for (let y = 0; y < GRID_SIZE; y++) {
     for (let x = 0; x < GRID_SIZE; x++) {
       const vx = -1 + x * step;
       const vy = -1 + y * step;
+      const h = current[y][x];
 
-      let heightValue;
-      if (current[y] !== undefined && current[y][x] !== undefined) {
-        heightValue = current[y][x];  // use stored wave height
-      } else {
-        heightValue = 0;              // default to flat (no wave)
-      }
-      verts.push(vx);
-      verts.push(vy);
-      verts.push(heightValue);
+      // normalize height to [-1, 1]
+      const n = Math.max(-1, Math.min(1, h));
+
+      // map height to color
+      const t = (n + 1) / 2;  // normalize 0..1
+      const r = 0.1 + 0.9 * t;            // white increases with height
+      const g = 0.3 + 0.7 * t;
+      const b = 0.6 + 0.4 * t; // 0.3 = deep blue, 1.0 = bright white
+
+      verts.push(vx, vy, 0);
+      colors.push(r, g, b);
     }
   }
-  return new Float32Array(verts);
+
+  return {
+    verts: new Float32Array(verts),
+    colors: new Float32Array(colors),
+  }
 }
 
 // wave propagation using:
@@ -128,24 +133,26 @@ function build_vertex_data() {
 // Each point oscillates based on the difference between its 
 // neighbors and its previous state, with damping to simulate energy loss.
 function update_waves() {
+  C2 = parseFloat(document.getElementById("wavespeed").value);
+  DAMPING = parseFloat(document.getElementById("damping").value);
   const next = [];
 
-   // initialize rows so next[y] is always defined
+  // initialize rows so next[y] is always defined
   for (let y = 0; y < GRID_SIZE; y++) {
     next[y] = new Array(GRID_SIZE).fill(0);
   }
 
+  // sums neighbors of each cell in the grid
   for (let y = 1; y < GRID_SIZE - 1; y++) {
-    next[y] = [];
     for (let x = 1; x < GRID_SIZE - 1; x++) {
-      const sumNeighbors =
-        current[y - 1][x] +
-        current[y + 1][x] +
-        current[y][x - 1] +
-        current[y][x + 1];
+      const center = current[y][x];
+      const lap =
+        current[y-1][x] + current[y+1][x] +
+        current[y][x-1] + current[y][x+1] -
+        4 * center;
 
-      // Discrete wave equation
-      next[y][x] = (sumNeighbors / 2 - previous[y][x]) * DAMPING;
+      // discrete wave: h_{t+1} = 2*h_t - h_{t-1} + C2 * lap
+      next[y][x] = (2 * center - previous[y][x] + C2 * lap) * DAMPING;
     }
   }
 
@@ -155,41 +162,65 @@ function update_waves() {
 
 // render points
 function render() {
-  // update the simulation
   update_waves();
-  // rebuild vertex data from current heightmap
-  const verts = build_vertex_data();
-  gl.bufferData(gl.ARRAY_BUFFER, verts, gl.DYNAMIC_DRAW);
-  // draw all points
+
+  const { verts, colors } = build_vertex_data();
   const totalVerts = GRID_SIZE * GRID_SIZE;
-  gl.uniform4f(unif_vcolor, 0.2, 0.6, 1.0, 1.0); // blueish color
+
   gl.clear(gl.COLOR_BUFFER_BIT);
+
+  // Upload vertex positions
+  const attr_vpos = gl.getAttribLocation(gl_prog, "vpos");
+  const posBuf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, verts, gl.DYNAMIC_DRAW);
+  gl.vertexAttribPointer(attr_vpos, 3, gl.FLOAT, false, 0, 0);
+  gl.enableVertexAttribArray(attr_vpos);
+
+  // Upload vertex colors
+  const attr_vcol = gl.getAttribLocation(gl_prog, "vcol");
+  const colBuf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, colBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, colors, gl.DYNAMIC_DRAW);
+  gl.vertexAttribPointer(attr_vcol, 3, gl.FLOAT, false, 0, 0);
+  gl.enableVertexAttribArray(attr_vcol);
+
+  // Draw all points
   gl.drawArrays(gl.POINTS, 0, totalVerts);
-  // repeat each frame
+
   requestAnimationFrame(render);
 }
 
 // mouse click to add ripples
 function add_ripple(event) {
-  const rect = canvas.getBoundingClientRect();
-  const cx = Math.floor(((event.clientX - rect.left) / rect.width) * GRID_SIZE);
-  const cy = Math.floor(((event.clientY - rect.top) / rect.height) * GRID_SIZE);
+  let radius = parseFloat(document.getElementById("splashradius").value);
+  let strength = parseFloat(document.getElementById("splashstrength").value);
 
-  const radius = 3;   // bump size (try 3–6)
+  const rect = canvas.getBoundingClientRect();
+
+  const gridX = Math.floor(((event.clientX - rect.left) / rect.width) * GRID_SIZE);
+  // Have to mirror Y because clip space and canvas space have opposite origins
+  const gridY = GRID_SIZE - 1 - Math.floor(
+    ((event.clientY - rect.top) / rect.height) * GRID_SIZE
+  );
+
   for (let y = -radius; y <= radius; y++) {
     for (let x = -radius; x <= radius; x++) {
-      const dx = cx + x;
-      const dy = cy + y;
+      const dx = gridX + x;
+      const dy = gridY + y;
+
+      // stay inside the grid
       if (dx >= 0 && dx < GRID_SIZE && dy >= 0 && dy < GRID_SIZE) {
-        const dist = Math.sqrt(x*x + y*y);
+        const dist = Math.sqrt(x * x + y * y);
         if (dist <= radius) {
-          current[dy][dx] = 1.0; // initial height pulse
+          // optional smooth falloff: stronger in center, fades at edges
+          const falloff = 1 - dist / radius; // linear fade
+          current[dy][dx] += strength * falloff;
         }
       }
     }
   }
 }
-
 
 function main() {
   init_gl();

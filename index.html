@@ -6,7 +6,52 @@
 </head>
     <body>
         <h1>Ripple Simulation</h1>
-        <canvas id="webgl_canvas" width="1000" height="1000"></canvas>
+
+        <table>
+          <tr valign="top">
+            <td>
+              <canvas id="webgl_canvas" width="1000" height="1000"></canvas>
+            </td>
+            <td>
+              <b>Wave Speed</b><br>
+              <input id="wavespeed" type="range" 
+                    min="0.05" max="0.5" value="0.35" step="0.05"
+                    oninput="this.nextElementSibling.value=this.value"
+                    style="width:200px">
+              <output>0.35</output>
+
+              <br><br>
+
+              <b>Damping</b><br>
+              <input id="damping" type="range" 
+                    min="0.9" max="1" value="0.99" step=".01"
+                    oninput="this.nextElementSibling.value=this.value"
+                    style="width:200px">
+              <output>0.99</output>
+
+              <br><br><br><br>
+
+              <b>Splash Radius</b><br>
+              <input id="splashradius" type="range" 
+                    min="1" max="20" value="2" step="1"
+                    oninput="this.nextElementSibling.value=this.value"
+                    style="width:200px">
+              <output>2</output>
+
+              <br><br>
+
+              <b>Splash Strength</b><br>
+              <input id="splashstrength" type="range" 
+                    min="0.1" max="3" value="1" step="0.1"
+                    oninput="this.nextElementSibling.value=this.value"
+                    style="width:200px">
+              <output>1</output>
+
+              <br><br>
+            </td>
+          </tr>
+        </table>
+
         <script type="text/javascript" src="main.js"></script>
     </body>
 </html>
