@@ -1,57 +1,94 @@
+<!-- Kate Chavira, Landrey Kiker
+ CS 4330 - Final Project - Ripple Simulation
+ 12-09-2025 -->
+
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ripple Simulation</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
-    <body>
-        <h1>Ripple Simulation</h1>
 
-        <table>
-          <tr valign="top">
-            <td>
-              <canvas id="webgl_canvas" width="1000" height="1000"></canvas>
-            </td>
-            <td>
-              <b>Wave Speed</b><br>
-              <input id="wavespeed" type="range" 
-                    min="0.05" max="0.5" value="0.35" step="0.05"
-                    oninput="this.nextElementSibling.value=this.value"
-                    style="width:200px">
-              <output>0.35</output>
+<body>
 
-              <br><br>
+  <!-- view toggle -->
+  <div class="view-toggle">
+    <button id="view-2d" class="view-btn active">2D View</button>
+    <button id="view-3d" class="view-btn">3D View</button>
+  </div>
 
-              <b>Damping</b><br>
-              <input id="damping" type="range" 
-                    min="0.9" max="1" value="0.99" step=".01"
-                    oninput="this.nextElementSibling.value=this.value"
-                    style="width:200px">
-              <output>0.99</output>
+  <!-- Title Block -->
+  <div class="ui-overlay">
+    <div class="title-block">
+      <h1>Ripple Simulation</h1>
+      <p>Interactive Wave Simulation</p>
+    </div>
+  </div>
 
-              <br><br><br><br>
+  <!-- UI Controls -->
+  <div class="controls-panel">
+    <h2>Parameters</h2>
 
-              <b>Splash Radius</b><br>
-              <input id="splashradius" type="range" 
-                    min="1" max="20" value="2" step="1"
-                    oninput="this.nextElementSibling.value=this.value"
-                    style="width:200px">
-              <output>2</output>
+    <div class="control-group">
+      <div class="control-label">
+        <span>Wave Speed</span>
+        <output id="wavespeed-val">0.35</output>
+      </div>
+      <input type="range" id="wavespeed" min="0.05" max="0.5" value="0.35" step="0.05"
+        oninput="document.getElementById('wavespeed-val').value=this.value">
+    </div>
 
-              <br><br>
+    <div class="control-group">
+      <div class="control-label">
+        <span>Damping</span>
+        <output id="damping-val">0.99</output>
+      </div>
+      <input type="range" id="damping" min="0.9" max="1" value="0.99" step="0.005"
+        oninput="document.getElementById('damping-val').value=this.value">
+    </div>
 
-              <b>Splash Strength</b><br>
-              <input id="splashstrength" type="range" 
-                    min="0.1" max="3" value="1" step="0.1"
-                    oninput="this.nextElementSibling.value=this.value"
-                    style="width:200px">
-              <output>1</output>
+    <div class="control-group">
+      <div class="control-label">
+        <span>Splash Radius</span>
+        <output id="splashradius-val">2</output>
+      </div>
+      <input type="range" id="splashradius" min="1" max="20" value="2" step="1"
+        oninput="document.getElementById('splashradius-val').value=this.value">
+    </div>
 
-              <br><br>
-            </td>
-          </tr>
-        </table>
+    <div class="control-group">
+      <div class="control-label">
+        <span>Splash Strength</span>
+        <output id="splashstrength-val">1.0</output>
+      </div>
+      <input type="range" id="splashstrength" min="0.1" max="3" value="1" step="0.1"
+        oninput="document.getElementById('splashstrength-val').value=this.value">
+    </div>
 
-        <script type="text/javascript" src="main.js"></script>
-    </body>
+    <div class="control-group">
+      <button id="reset" class="reset-btn">Reset</button>
+    </div>
+  </div>
+
+  <!-- hint -->
+  <div class="hint">
+    <span id="hint-text">Click on the canvas to create ripples</span>
+  </div>
+
+  <!-- 2d Version -->
+  <div id="container-2d" class="sim-container">
+    <canvas id="webgl_canvas" width="1000" height="1000"></canvas>
+  </div>
+
+  <!-- 3d Version -->
+  <div id="container-3d" class="sim-container" style="display: none;">
+    <div id="canvas-container"></div>
+  </div>
+
+  <script type="module" src="main.js"></script>
+</body>
+
 </html>
