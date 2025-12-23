@@ -1,7 +1,3 @@
-/* Kate Chavira, Landrey Kiker
- CS 4330 - Final Project - Ripple Simulation
- 12-09-2025 */
-
 "use strict";
 
 // vertex shader code (vsc)

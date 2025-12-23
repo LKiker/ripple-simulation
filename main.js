@@ -1,7 +1,3 @@
-/* Kate Chavira, Landrey Kiker
- CS 4330 - Final Project - Ripple Simulation
- 12-09-2025 */
-
 import { start2D, stop2D } from "./sim2d.js";
 import { start3D, stop3D } from "./sim3d.js";
 

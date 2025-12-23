@@ -1,7 +1,3 @@
-/* Kate Chavira, Landrey Kiker
- CS 4330 - Final Project - Ripple Simulation
- 12-09-2025 */
-
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.module.js";
 
 // User control values
