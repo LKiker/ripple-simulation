@@ -3,8 +3,8 @@
 This project is an interactive 2D and 3D water ripple simulation built from scratch using WebGL.
 It visualizes real-time wave propagation on a heightmap and allows users to inject energy through mouse interaction, demonstrating core physics and real-time graphics concepts.
 
-<img src="2Ddemo.gif" width="700"/>
-<img src="3Ddemo.gif" width="700"/>
+<img src="assets/2Ddemo.gif" width="700"/>
+<img src="assets/3Ddemo.gif" width="700"/>
 
 ---
 
